@@ -37,7 +37,7 @@ export default function SignUpPage() {
   const handleSignUp = async (values: SignUpFormValues) => {
     try {
       await createUserWithEmailAndPassword(auth, values.email, values.password);
-      toast({ title: "Account Created!", description: "Welcome to Kashmir Classifieds."});
+      toast({ title: "Account Created!", description: "Welcome to E-Kaar."});
       router.push("/"); 
     } catch (error: any) {
       let errorMessage = "Failed to sign up. Please try again.";

@@ -31,7 +31,7 @@ export default function Navbar() {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center py-4">
           <Link href="/" className="text-2xl font-bold text-primary hover:text-primary/80 transition-colors">
-            Kashmir Classifieds
+            E-Kaar
           </Link>
           <div className="flex items-center space-x-2 md:space-x-4">
             <Button variant="ghost" asChild size="sm">

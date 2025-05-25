@@ -11,7 +11,7 @@ const geistSans = GeistSans;
 const geistMono = GeistMono;
 
 export const metadata: Metadata = {
-  title: "Kashmir Classifieds",
+  title: "E-Kaar",
   description: "Your local marketplace for Jammu & Kashmir.",
 };
 
