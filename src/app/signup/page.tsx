@@ -80,10 +80,10 @@ export default function SignupPage() {
   return (
     <div className="min-h-[calc(100vh-100px)] flex items-center justify-center">
       <div className="w-full max-w-md px-4">
-        <Card>
+        <Card className="dark:bg-gray-800 border-0 dark:border dark:border-gray-700">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">Create an Account</CardTitle>
-            <CardDescription className="text-center">
+            <CardTitle className="text-2xl text-center dark:text-white">Create an Account</CardTitle>
+            <CardDescription className="text-center dark:text-gray-300">
               Enter your details to create your account
             </CardDescription>
           </CardHeader>
@@ -91,14 +91,15 @@ export default function SignupPage() {
             <AuthForm
               schema={signupSchema}
               onSubmit={handleSignup}
-              submitText="Sign Up"
-              showDisplayName
+              formTitle="Create an Account"
+              submitButtonText="Sign Up"
+              isSignUp
             />
-            <div className="mt-4 text-center text-sm">
+            <div className="mt-4 text-center text-sm dark:text-gray-300">
               Already have an account?{" "}
               <Link
                 href="/login"
-                className="text-primary hover:underline"
+                className="text-primary hover:underline dark:text-blue-400"
               >
                 Log in
               </Link>

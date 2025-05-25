@@ -66,10 +66,10 @@ export default function LoginPage() {
   return (
     <div className="min-h-[calc(100vh-100px)] flex items-center justify-center">
       <div className="w-full max-w-md px-4">
-        <Card>
+        <Card className="dark:bg-gray-800 border-0 dark:border dark:border-gray-700">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">Login</CardTitle>
-            <CardDescription className="text-center">
+            <CardTitle className="text-2xl text-center dark:text-white">Login</CardTitle>
+            <CardDescription className="text-center dark:text-gray-300">
               Enter your email and password to login
             </CardDescription>
           </CardHeader>
@@ -77,12 +77,13 @@ export default function LoginPage() {
             <AuthForm
               schema={loginSchema}
               onSubmit={handleLogin}
-              submitText="Login"
+              formTitle="Welcome Back"
+              submitButtonText="Login"
             />
-            <div className="mt-4 text-center text-sm">
+            <div className="mt-4 text-center text-sm dark:text-gray-300">
               <Link
                 href="/forgot-password"
-                className="text-primary hover:underline"
+                className="text-primary hover:underline dark:text-blue-400"
               >
                 Forgot your password?
               </Link>
@@ -90,7 +91,7 @@ export default function LoginPage() {
                 Don&apos;t have an account?{" "}
                 <Link
                   href="/signup"
-                  className="text-primary hover:underline"
+                  className="text-primary hover:underline dark:text-blue-400"
                 >
                   Sign up
                 </Link>
