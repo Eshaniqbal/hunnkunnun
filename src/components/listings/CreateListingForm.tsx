@@ -1,4 +1,3 @@
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -28,6 +27,7 @@ import Image from "next/image";
 import { Loader2, PlusCircle, Tag, Trash2, UploadCloud, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
+import { uploadImages } from "@/lib/uploadImages";
 
 export default function CreateListingForm() {
   const router = useRouter();
@@ -43,8 +43,9 @@ export default function CreateListingForm() {
     defaultValues: {
       title: "",
       description: "",
-      price: "" as unknown as number, // Initialize with empty string for controlled input
-      category: undefined, 
+      price: "",
+      category: "",
+      phoneNumber: "",
       tags: [],
       locationAddress: "",
       locationCity: "",
@@ -156,10 +157,13 @@ export default function CreateListingForm() {
     }
     setIsSubmitting(true);
     try {
+      // Upload images to MongoDB GridFS
+      const imageUrls = await uploadImages(values.images);
+
       // Ensure price is a number before sending to the backend
       const submissionValues = {
         ...values,
-        price: Number(values.price) // Coerce price, react-hook-form might send it as string for type="number"
+        price: Number(values.price)
       };
 
       const userDetails = {
@@ -167,7 +171,8 @@ export default function CreateListingForm() {
         name: currentUser.displayName,
         email: currentUser.email,
       };
-      const result = await createListing(submissionValues, userDetails);
+      
+      const result = await createListing(submissionValues, userDetails, imageUrls);
       toast({ title: "Listing Created!", description: "Your listing has been successfully published." });
       router.push(`/listings/${result.id}`);
     } catch (error: any) {
@@ -183,13 +188,13 @@ export default function CreateListingForm() {
   }
 
   return (
-    <Card className="max-w-2xl mx-auto p-4 sm:p-6 md:p-8 shadow-xl my-8 bg-card">
-      <CardHeader className="p-0 mb-6">
-        <CardTitle className="text-2xl sm:text-3xl font-bold text-primary text-center">Create New Listing</CardTitle>
+    <Card className="max-w-4xl mx-auto">
+      <CardHeader>
+        <CardTitle>Create New Listing</CardTitle>
       </CardHeader>
-      <CardContent className="p-0">
+      <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 sm:space-y-8">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <FormField
               control={form.control}
               name="title"
@@ -221,29 +226,53 @@ export default function CreateListingForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Price (INR)</FormLabel>
-                    <FormControl><Input type="number" placeholder="e.g., 5000" {...field} /></FormControl>
+                    <FormControl>
+                      <Input type="number" placeholder="e.g., 5000" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <FormField
                 control={form.control}
-                name="category"
+                name="phoneNumber"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value} >
-                      <FormControl><SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger></FormControl>
-                      <SelectContent>
-                        {ListingCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>WhatsApp Number</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="tel" 
+                        placeholder="10-digit mobile number (e.g., 9876543210)" 
+                        {...field} 
+                        maxLength={10}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Enter your 10-digit mobile number without +91 or 0 prefix
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
             
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Category</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value} >
+                    <FormControl><SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger></FormControl>
+                    <SelectContent>
+                      {ListingCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormItem>
               <FormLabel>Images (up to {MAX_IMAGES}, max 5MB each)</FormLabel>
               <FormControl>

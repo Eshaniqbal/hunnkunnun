@@ -1,13 +1,28 @@
-
 "use server";
 
 import { z } from "zod";
-import { collection, addDoc, getDocs, doc, getDoc, query, where, Timestamp, orderBy, serverTimestamp, FieldValue } from "firebase/firestore";
-import { ref, uploadString, getDownloadURL, deleteObject } from "firebase/storage";
-import { db, storage } from "@/lib/firebase"; // Removed auth import as it's client-side
 import type { Listing } from "@/types";
-import { CreateListingSchema, type CreateListingInput, dataURLMimeType } from "@/lib/schemas";
+import { CreateListingSchema, type CreateListingInput } from "@/lib/schemas";
 import { revalidatePath } from "next/cache";
+import connectDB from "@/lib/mongodb";
+import ListingModel from "@/models/Listing";
+import { initializeApp } from "firebase/app";
+import { getStorage, ref, deleteObject } from "firebase/storage";
+import { Types } from 'mongoose';
+
+// Initialize Firebase
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+};
+
+// Initialize Firebase app if it hasn't been initialized
+const firebaseApp = initializeApp(firebaseConfig, 'listings-app');
+const storage = getStorage(firebaseApp);
 
 interface UserDetails {
   uid: string;
@@ -15,10 +30,20 @@ interface UserDetails {
   email: string | null;
 }
 
-export async function createListing(input: CreateListingInput, user: UserDetails) {
+// Helper function to serialize MongoDB document
+function serializeDocument(doc: any): any {
+  const serialized = JSON.parse(JSON.stringify(doc));
+  if (serialized._id) {
+    serialized.id = serialized._id.toString();
+    delete serialized._id;
+  }
+  delete serialized.__v;
+  return serialized;
+}
+
+export async function createListing(input: CreateListingInput, user: UserDetails, imageUrls: string[]) {
   const validation = CreateListingSchema.safeParse(input);
   if (!validation.success) {
-    // Construct a more detailed error message
     const fieldErrors = validation.error.flatten().fieldErrors;
     let errorMessage = "Invalid input data. ";
     for (const key in fieldErrors) {
@@ -30,94 +55,66 @@ export async function createListing(input: CreateListingInput, user: UserDetails
     throw new Error(errorMessage.trim() || "Invalid input data.");
   }
   
-  const { title, description, price, category, tags, locationAddress, locationCity, images: imageDataUris } = validation.data;
+  const { title, description, price, category, tags, locationAddress, locationCity, phoneNumber } = validation.data;
 
-  const imageUrls: string[] = [];
   try {
-    for (const [index, dataUri] of imageDataUris.entries()) {
-      const mimeType = dataURLMimeType(dataUri);
-      // Fallback to 'png' if mimeType is generic or split fails
-      const extension = mimeType.startsWith('image/') ? mimeType.split('/')[1] || 'png' : 'png';
-      const imageRef = ref(storage, `listings/${user.uid}/${Date.now()}_${index}.${extension}`);
-      await uploadString(imageRef, dataUri, 'data_url');
-      const downloadURL = await getDownloadURL(imageRef);
-      imageUrls.push(downloadURL);
-    }
+    // Connect to MongoDB
+    await connectDB();
 
-    const listingData: Omit<Listing, "id" | "createdAt"> & { createdAt: FieldValue } = {
+    // Create listing in MongoDB
+    const listingData = {
       title,
       description,
       price,
       category,
+      phoneNumber,
       images: imageUrls,
       tags,
-      userId: user.uid, 
-      userName: user.name || "Anonymous User", 
+      userId: user.uid,
+      userName: user.name || "Anonymous User",
       userEmail: user.email || "No Email Provided",
       location: {
         address: locationAddress,
         city: locationCity,
-        coordinates: null, 
+        coordinates: null,
       },
-      createdAt: serverTimestamp(),
     };
 
-    const docRef = await addDoc(collection(db, "listings"), listingData);
+    const listing = await ListingModel.create(listingData);
+    const serializedListing = serializeDocument(listing);
     
     revalidatePath("/");
-    revalidatePath(`/listings/${docRef.id}`);
-    revalidatePath("/profile"); // Also revalidate profile page if user's listings are shown there
-    return { id: docRef.id };
+    revalidatePath(`/listings/${serializedListing.id}`);
+    revalidatePath("/profile");
+    return serializedListing;
 
   } catch (error: any) {
     console.error("Error creating listing:", error);
-    // Attempt to clean up uploaded images if listing creation fails
-    for(const url of imageUrls) {
-        try {
-            const imageStorageRef = ref(storage, url); // Use ref(storage, url) to get the reference
-            await deleteObject(imageStorageRef);
-        } catch (cleanupError) {
-            console.error("Error cleaning up image:", url, cleanupError);
-        }
-    }
     throw new Error(error.message || "Failed to create listing.");
   }
 }
 
-
 export async function getListings(filters?: { category?: string; city?: string; userId?: string }): Promise<Listing[]> {
   try {
-    const listingsCol = collection(db, "listings");
-    const qConstraints: any[] = [orderBy("createdAt", "desc")]; // Use any[] for qConstraints temporarily
-
+    await connectDB();
+    
+    const query: any = {};
+    
     if (filters?.category) {
-      qConstraints.push(where("category", "==", filters.category));
+      query.category = filters.category;
     }
     if (filters?.city) {
-      // For case-insensitive search, this would require more complex querying or data duplication (e.g. lowercase city field)
-      // Firestore's default string comparisons are case-sensitive.
-      // For simplicity, we'll keep it case-sensitive for now.
-      qConstraints.push(where("location.city", "==", filters.city));
+      query['location.city'] = filters.city;
     }
     if (filters?.userId) {
-      qConstraints.push(where("userId", "==", filters.userId));
+      query.userId = filters.userId;
     }
     
-    const q = query(listingsCol, ...qConstraints);
-    const querySnapshot = await getDocs(q);
+    const listings = await ListingModel.find(query)
+      .sort({ createdAt: -1 })
+      .lean();
     
-    const listings = querySnapshot.docs.map(docSnap => {
-      const data = docSnap.data();
-      return {
-        id: docSnap.id,
-        ...data,
-        // Ensure createdAt is properly cast to Timestamp if it's not already
-        // or handle cases where it might be a FieldValue (serverTimestamp()) before commit.
-        // For fetched data, it should be a Timestamp.
-        createdAt: data.createdAt as Timestamp 
-      } as Listing;
-    });
-    return listings;
+    return listings.map(listing => serializeDocument(listing));
   } catch (error) {
     console.error("Error fetching listings: ", error);
     return [];
@@ -126,21 +123,68 @@ export async function getListings(filters?: { category?: string; city?: string; 
 
 export async function getListingById(id: string): Promise<Listing | null> {
   try {
-    const docRef = doc(db, "listings", id);
-    const docSnap = await getDoc(docRef);
+    await connectDB();
+    
+    const listing = await ListingModel.findById(id).lean();
 
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      return { 
-        id: docSnap.id, 
-        ...data, 
-        createdAt: data.createdAt as Timestamp 
-      } as Listing;
-    } else {
+    if (!listing) {
       return null;
     }
+
+    return serializeDocument(listing);
   } catch (error) {
     console.error("Error fetching listing by ID: ", error);
     return null;
+  }
+}
+
+export async function deleteListing(listingId: string) {
+  try {
+    await connectDB();
+    
+    // Validate MongoDB ObjectId
+    if (!Types.ObjectId.isValid(listingId)) {
+      throw new Error("Invalid listing ID format");
+    }
+
+    // Get the listing first to access its images
+    const listing = await ListingModel.findById(listingId).lean();
+    
+    if (!listing) {
+      throw new Error("Listing not found");
+    }
+
+    // Delete the listing from MongoDB
+    const deletedListing = await ListingModel.findByIdAndDelete(listingId);
+    
+    if (!deletedListing) {
+      throw new Error("Failed to delete listing");
+    }
+
+    // Delete associated images from Firebase storage if they exist
+    if (listing.images && listing.images.length > 0) {
+      for (const imageUrl of listing.images) {
+        try {
+          if (imageUrl.includes('firebase') && imageUrl.includes('/o/')) {
+            // Get the image path from the URL
+            const imagePath = decodeURIComponent(imageUrl.split('/o/')[1].split('?')[0]);
+            const imageRef = ref(storage, imagePath);
+            await deleteObject(imageRef);
+          }
+        } catch (error) {
+          console.error("Error deleting image:", error);
+          // Continue with other images even if one fails
+        }
+      }
+    }
+
+    revalidatePath("/");
+    revalidatePath("/profile");
+    revalidatePath("/profile/listings");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting listing:", error);
+    throw error;
   }
 }

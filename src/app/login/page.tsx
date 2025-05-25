@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -10,6 +9,7 @@ import { AuthForm } from "@/components/auth/AuthForm";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Invalid email address." }),
@@ -29,7 +29,6 @@ export default function LoginPage() {
     }
   }, [currentUser, authLoading, router]);
 
-
   const handleLogin = async (values: LoginFormValues) => {
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
@@ -43,43 +42,63 @@ export default function LoginPage() {
         errorMessage = error.message;
       }
       console.error("Login error:", error);
-      throw new Error(errorMessage); // This will be caught by AuthForm to display error
+      throw new Error(errorMessage);
     }
   };
 
   if (authLoading || (!authLoading && currentUser)) {
-    // Render nothing or a loading indicator while checking auth or if already logged in
     return (
-        <div className="flex h-[calc(100vh-200px)] items-center justify-center">
-             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="animate-spin text-primary">
-                <path d="M12 2V6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M12 18V22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M4.93005 4.93005L7.76005 7.76005" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M16.24 16.24L19.07 19.07" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M2 12H6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M18 12H22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M4.93005 19.07L7.76005 16.24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M16.24 7.76005L19.07 4.93005" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-        </div>
+      <div className="flex h-[calc(100vh-200px)] items-center justify-center">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="animate-spin text-primary">
+          <path d="M12 2V6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M12 18V22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M4.93005 4.93005L7.76005 7.76005" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M16.24 16.24L19.07 19.07" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M2 12H6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M18 12H22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M4.93005 19.07L7.76005 16.24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M16.24 7.76005L19.07 4.93005" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </div>
     );
   }
 
-
   return (
-    <div className="container mx-auto max-w-lg py-12">
-      <AuthForm
-        schema={loginSchema}
-        onSubmit={handleLogin}
-        formTitle="Welcome Back!"
-        submitButtonText="Login"
-      />
-      <p className="mt-6 text-center text-sm text-muted-foreground">
-        Don&apos;t have an account?{" "}
-        <Link href="/signup" className="font-medium text-accent hover:text-accent/80">
-          Sign up
-        </Link>
-      </p>
+    <div className="min-h-[calc(100vh-100px)] flex items-center justify-center">
+      <div className="w-full max-w-md px-4">
+        <Card>
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl text-center">Login</CardTitle>
+            <CardDescription className="text-center">
+              Enter your email and password to login
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AuthForm
+              schema={loginSchema}
+              onSubmit={handleLogin}
+              submitText="Login"
+            />
+            <div className="mt-4 text-center text-sm">
+              <Link
+                href="/forgot-password"
+                className="text-primary hover:underline"
+              >
+                Forgot your password?
+              </Link>
+              <div className="mt-2">
+                Don&apos;t have an account?{" "}
+                <Link
+                  href="/signup"
+                  className="text-primary hover:underline"
+                >
+                  Sign up
+                </Link>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

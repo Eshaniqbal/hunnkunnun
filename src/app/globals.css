@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -9,100 +8,99 @@ body {
 
 @layer base {
   :root {
-    --background: 240 50% 9%; /* Deep, saturated Blue-Black */
-    --foreground: 240 10% 95%; /* Brighter Cyber White */
+    --background: 60 38% 92%; /* F3F3E0 - Cream */
+    --foreground: 0 0% 0%; /* Pure black text */
 
-    --card: 240 50% 14%; /* Slightly lighter Blue-Black for cards */
-    --card-foreground: 240 10% 95%; /* Brighter Cyber White */
+    --card: 60 38% 95%;
+    --card-foreground: 0 0% 0%; /* Pure black text */
 
-    --popover: 240 50% 12%; /* Popover background, similar to card */
-    --popover-foreground: 240 10% 95%; /* Brighter Cyber White */
+    --popover: 60 38% 97%;
+    --popover-foreground: 0 0% 0%; /* Pure black text */
 
-    --primary: 310 100% 60%; /* Vibrant Neon Magenta/Purple-Pink */
-    --primary-foreground: 310 100% 15%; /* Darker Pink for text on primary */
+    --primary: 0 0% 0%; /* Pure black */
+    --primary-foreground: 60 38% 92%;
 
-    --secondary: 240 35% 25%; /* Muted Deep Blue */
-    --secondary-foreground: 240 10% 85%; /* Lighter grey for text on secondary */
+    --secondary: 0 0% 9%;
+    --secondary-foreground: 60 38% 92%;
 
-    --muted: 240 35% 20%; /* Darker Muted Blue */
-    --muted-foreground: 240 10% 65%; /* Mid grey for muted text */
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 40%; /* Darker gray for better contrast */
 
-    --accent: 180 100% 50%; /* Vibrant Neon Cyan */
-    --accent-foreground: 180 100% 10%; /* Dark Cyan for text on accent */
+    --accent: 0 0% 0%;
+    --accent-foreground: 60 38% 92%;
 
-    --destructive: 0 90% 60%; /* Brighter Neon Red */
-    --destructive-foreground: 0 0% 10%; /* Dark for text on destructive */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 60 38% 92%;
 
-    --border: 240 50% 25%; /* Border color */
-    --input: 240 50% 22%; /* Input background */
-    --ring: 180 100% 50%; /* Neon Cyan for rings, matching accent */
+    --border: 0 0% 80%;
+    --input: 0 0% 85%;
+    --ring: 0 0% 0%;
 
     --radius: 0.5rem;
 
-    /* Neon Chart colors */
-    --chart-1: 310 100% 70%; /* Lighter Neon Magenta/Pink */
-    --chart-2: 180 100% 60%; /* Lighter Neon Cyan */
-    --chart-3: 270 100% 65%; /* Neon Purple */
-    --chart-4: 120 100% 50%; /* Neon Green (Brighter) */
-    --chart-5: 50 100% 55%;  /* Neon Orange-Yellow */
+    /* Chart colors */
+    --chart-1: 0 0% 0%;
+    --chart-2: 0 0% 20%;
+    --chart-3: 0 0% 40%;
+    --chart-4: 0 0% 60%;
+    --chart-5: 0 0% 80%;
 
-    /* Sidebar specific theme variables - matching new neon theme */
-    --sidebar-background: 240 50% 7%; /* Even darker blue for sidebar */
-    --sidebar-foreground: 240 10% 90%; /* Slightly dimmed Cyber White */
-    --sidebar-primary: 310 100% 60%; /* Vibrant Neon Magenta/Purple-Pink */
-    --sidebar-primary-foreground: 310 100% 15%; /* Dark Pink */
-    --sidebar-accent: 180 100% 50%; /* Vibrant Neon Cyan */
-    --sidebar-accent-foreground: 180 100% 10%; /* Dark Cyan */
-    --sidebar-border: 240 50% 20%; /* Dark border for sidebar */
-    --sidebar-ring: 180 100% 50%; /* Neon Cyan for sidebar rings */
+    /* Sidebar theme variables */
+    --sidebar-background: 60 38% 92%;
+    --sidebar-foreground: 0 0% 0%;
+    --sidebar-primary: 0 0% 0%;
+    --sidebar-primary-foreground: 60 38% 92%;
+    --sidebar-accent: 0 0% 0%;
+    --sidebar-accent-foreground: 60 38% 92%;
+    --sidebar-border: 0 0% 80%;
+    --sidebar-ring: 0 0% 0%;
   }
 
   .dark {
-    /* Ensure .dark mode also reflects the new neon theme */
-    --background: 240 50% 9%;
-    --foreground: 240 10% 95%;
+    --background: 209 45% 15%; /* Darker navy */
+    --foreground: 0 0% 100%; /* Pure white text */
 
-    --card: 240 50% 14%;
-    --card-foreground: 240 10% 95%;
+    --card: 209 45% 18%;
+    --card-foreground: 0 0% 100%; /* Pure white text */
 
-    --popover: 240 50% 12%;
-    --popover-foreground: 240 10% 95%;
+    --popover: 209 45% 20%;
+    --popover-foreground: 0 0% 100%; /* Pure white text */
 
-    --primary: 310 100% 60%;
-    --primary-foreground: 310 100% 15%;
+    --primary: 328 54% 20%;
+    --primary-foreground: 0 0% 100%; /* Pure white text */
 
-    --secondary: 240 35% 25%;
-    --secondary-foreground: 240 10% 85%;
+    --secondary: 96 17% 45%;
+    --secondary-foreground: 0 0% 100%; /* Pure white text */
 
-    --muted: 240 35% 20%;
-    --muted-foreground: 240 10% 65%;
+    --muted: 96 17% 40%;
+    --muted-foreground: 0 0% 70%; /* Lighter gray for better contrast */
 
-    --accent: 180 100% 50%;
-    --accent-foreground: 180 100% 10%;
+    --accent: 96 17% 45%;
+    --accent-foreground: 0 0% 100%; /* Pure white text */
 
-    --destructive: 0 90% 60%;
-    --destructive-foreground: 0 0% 10%;
+    --destructive: 0 84% 45%;
+    --destructive-foreground: 0 0% 100%; /* Pure white text */
 
-    --border: 240 50% 25%;
-    --input: 240 50% 22%;
-    --ring: 180 100% 50%;
+    --border: 209 45% 25%;
+    --input: 209 45% 20%;
+    --ring: 328 54% 20%;
 
-    /* Neon Chart colors for dark mode */
-    --chart-1: 310 100% 70%;
-    --chart-2: 180 100% 60%;
-    --chart-3: 270 100% 65%;
-    --chart-4: 120 100% 50%;
-    --chart-5: 50 100% 55%;
+    /* Chart colors for dark mode */
+    --chart-1: 209 45% 20%;
+    --chart-2: 209 55% 34%;
+    --chart-3: 328 54% 20%;
+    --chart-4: 96 17% 45%;
+    --chart-5: 96 17% 40%;
 
-    /* Sidebar specific theme variables for dark mode */
-    --sidebar-background: 240 50% 7%;
-    --sidebar-foreground: 240 10% 90%;
-    --sidebar-primary: 310 100% 60%;
-    --sidebar-primary-foreground: 310 100% 15%;
-    --sidebar-accent: 180 100% 50%;
-    --sidebar-accent-foreground: 180 100% 10%;
-    --sidebar-border: 240 50% 20%;
-    --sidebar-ring: 180 100% 50%;
+    /* Sidebar theme variables for dark mode */
+    --sidebar-background: 209 45% 15%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 328 54% 20%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 96 17% 45%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 209 45% 25%;
+    --sidebar-ring: 328 54% 20%;
   }
 }
 

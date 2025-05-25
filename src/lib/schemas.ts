@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import type { ListingCategory } from "@/types";
 import { ListingCategories } from "@/types";
@@ -19,6 +18,9 @@ export const CreateListingSchema = z.object({
   category: z.custom<ListingCategory>((val) => ListingCategories.includes(val as ListingCategory), {
     message: "Invalid category selected.",
   }),
+  phoneNumber: z.string()
+    .regex(/^\d{10}$/, "Please enter a valid 10-digit phone number")
+    .transform(val => `+91${val}`),
   tags: z.array(z.string().min(1, "Tag cannot be empty").max(30, "Tag must be at most 30 characters"))
     .max(10, "Maximum 10 tags allowed."),
   locationAddress: z.string().min(5, "Address must be at least 5 characters").max(200, "Address must be at most 200 characters"),

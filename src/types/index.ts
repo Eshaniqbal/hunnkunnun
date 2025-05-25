@@ -1,4 +1,3 @@
-
 import type { Timestamp, FieldValue } from "firebase/firestore"; // Added FieldValue for serverTimestamp
 import type { User as FirebaseUser } from "firebase/auth";
 
@@ -17,11 +16,12 @@ export interface Listing {
   description: string;
   price: number;
   category: string;
-  images: string[]; // URLs of images
+  images: string[];
   tags: string[];
   userId: string;
   userName: string;
-  userEmail: string; 
+  userEmail: string;
+  phoneNumber: string;
   location: {
     address: string;
     city: string;
@@ -30,8 +30,7 @@ export interface Listing {
       lng: number;
     } | null;
   };
-  createdAt: Timestamp | FieldValue; // Allow FieldValue for serverTimestamp on creation
-  // Add other relevant fields like condition, etc.
+  createdAt: string;
 }
 
 export const ListingCategories = [

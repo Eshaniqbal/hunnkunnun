@@ -1,4 +1,3 @@
-
 "use client";
 
 import AuthGuard from "@/components/AuthGuard";
@@ -15,7 +14,7 @@ import ListingCard from "@/components/listings/ListingCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
-import Link from "next/link"; // Added Link import
+import Link from "next/link";
 
 export default function ProfilePage() {
   const { currentUser, loading: authLoading } = useAuth();
@@ -91,8 +90,10 @@ export default function ProfilePage() {
                 </CardDescription>
               </div>
             </div>
-            <Button variant="outline" onClick={() => toast({title: "Coming Soon!", description: "Profile editing will be available shortly."})} className="mt-4 sm:mt-0 self-center sm:self-start">
-              <Edit3 size={16} className="mr-2"/> Edit Profile
+            <Button variant="outline" asChild className="mt-4 sm:mt-0 self-center sm:self-start">
+              <Link href="/profile/edit">
+                <Edit3 size={16} className="mr-2"/> Edit Profile
+              </Link>
             </Button>
           </CardHeader>
         </Card>

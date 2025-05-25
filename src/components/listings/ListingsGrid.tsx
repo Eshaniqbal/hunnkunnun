@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { Listing, ListingCategory } from "@/types";
@@ -138,7 +137,7 @@ export default function ListingsGrid() {
       </Card>
 
       {isLoading && !isPending ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
           {[...Array(8)].map((_, i) => (
             <Card key={i} className="overflow-hidden bg-card">
               <div className="aspect-[16/10] bg-muted animate-pulse"></div>
@@ -161,7 +160,7 @@ export default function ListingsGrid() {
           <p className="text-sm text-muted-foreground">Try adjusting your filters or check back later.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
           {listings.map((listing) => (
             <ListingCard key={listing.id} listing={listing} />
           ))}
