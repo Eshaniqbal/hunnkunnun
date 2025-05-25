@@ -15,6 +15,7 @@ import ListingCard from "@/components/listings/ListingCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import Link from "next/link"; // Added Link import
 
 export default function ProfilePage() {
   const { currentUser, loading: authLoading } = useAuth();
