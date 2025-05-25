@@ -1,9 +1,8 @@
 
 "use client";
 
-import type { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, Controller, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -18,8 +17,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { CreateListingSchema, createListing } from "@/actions/listings";
-import type { CreateListingInput } from "@/actions/listings";
+import { createListing } from "@/actions/listings";
+import { CreateListingSchema, type CreateListingInput, MAX_IMAGES } from "@/lib/schemas";
 import { ListingCategories } from "@/types";
 import { smartTagging } from "@/ai/flows/smart-tagging";
 import { useState, useRef, ChangeEvent } from "react";
@@ -28,18 +27,15 @@ import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
 import { Loader2, PlusCircle, Tag, Trash2, UploadCloud, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAuth } from "@/hooks/useAuth"; // Import useAuth
-
-const MAX_IMAGES = 5;
+import { useAuth } from "@/hooks/useAuth";
 
 export default function CreateListingForm() {
   const router = useRouter();
   const { toast } = useToast();
-  const { currentUser } = useAuth(); // Get current user
+  const { currentUser } = useAuth(); 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [isTagging, setIsTagging] = useState(false);
-  const [currentTags, setCurrentTags] = useState<string[]>([]);
   const tagInputRef = useRef<HTMLInputElement>(null);
   
   const form = useForm<CreateListingInput>({
@@ -47,8 +43,8 @@ export default function CreateListingForm() {
     defaultValues: {
       title: "",
       description: "",
-      price: undefined, // Use undefined for number to allow placeholder
-      category: undefined, // Use undefined to show placeholder
+      price: undefined, 
+      category: undefined, 
       tags: [],
       locationAddress: "",
       locationCity: "",
@@ -61,7 +57,6 @@ export default function CreateListingForm() {
     name: "images"
   });
 
-  // This state is for UI previews only
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
 
 
@@ -69,10 +64,12 @@ export default function CreateListingForm() {
     if (event.target.files && event.target.files.length > 0) {
       if (imageFields.length + event.target.files.length > MAX_IMAGES) {
         toast({ title: "Image Limit", description: `You can upload a maximum of ${MAX_IMAGES} images.`, variant: "destructive" });
+        if (event.target) event.target.value = ""; // Clear file input
         return;
       }
 
       const newImageFiles = Array.from(event.target.files);
+      let firstImageForTagging: string | null = null;
       
       for (const file of newImageFiles) {
         if (file.size > 5 * 1024 * 1024) { // 5MB limit
@@ -82,16 +79,24 @@ export default function CreateListingForm() {
         const reader = new FileReader();
         reader.onloadend = () => {
           const dataUri = reader.result as string;
-          appendImage(dataUri); // Add to RHF array
-          setImagePreviews(prev => [...prev, dataUri]); // Add to preview array
+          appendImage(dataUri); 
+          setImagePreviews(prev => [...prev, dataUri]); 
 
-          // Smart tagging for the first image uploaded, if no tags yet
-          if (imagePreviews.length === 0 && currentTags.length === 0 && !isTagging) { // Check imagePreviews.length before update
+          if (imagePreviews.length === 0 && !firstImageForTagging && !isTagging && form.getValues("tags").length === 0) {
+            firstImageForTagging = dataUri; // Capture first image for tagging
+            
+            // Smart tagging for the first image uploaded
             setIsTagging(true);
-            smartTagging({ photoDataUri: dataUri })
+            smartTagging({ photoDataUri: firstImageForTagging })
               .then(result => {
-                const uniqueNewTags = result.tags.filter(tag => !currentTags.includes(tag) && !suggestedTags.includes(tag));
-                setSuggestedTags(prev => [...prev, ...uniqueNewTags].slice(0, 5)); // Limit suggestions
+                const currentTagsValue = form.getValues("tags");
+                const uniqueNewTags = result.tags.filter(tag => 
+                  !currentTagsValue.includes(tag) && 
+                  !suggestedTags.includes(tag) &&
+                  !tag.toLowerCase().includes("person") && // Basic filter for "person"
+                  !tag.toLowerCase().includes("people")   // Basic filter for "people"
+                );
+                setSuggestedTags(prev => [...new Set([...prev, ...uniqueNewTags])].slice(0, 5)); 
               })
               .catch(e => {
                 console.error("Smart tagging failed", e);
@@ -102,42 +107,42 @@ export default function CreateListingForm() {
         };
         reader.readAsDataURL(file);
       }
-      if (event.target) event.target.value = ""; // Clear file input
+      if (event.target) event.target.value = ""; // Clear file input after processing all files
     }
   };
 
   const handleRemoveImage = (index: number) => {
-    removeImageFromArray(index); // Remove from RHF array
-    setImagePreviews(prev => prev.filter((_, i) => i !== index)); // Remove from preview array
+    removeImageFromArray(index); 
+    setImagePreviews(prev => prev.filter((_, i) => i !== index)); 
   };
 
   const handleAddTag = () => {
     if (tagInputRef.current) {
       const newTag = tagInputRef.current.value.trim();
-      if (newTag && !currentTags.includes(newTag) && currentTags.length < 10) {
-        const updatedTags = [...currentTags, newTag];
-        setCurrentTags(updatedTags);
+      const currentTagsValue = form.getValues("tags");
+      if (newTag && !currentTagsValue.includes(newTag) && currentTagsValue.length < 10) {
+        const updatedTags = [...currentTagsValue, newTag];
         form.setValue("tags", updatedTags, { shouldValidate: true });
         tagInputRef.current.value = "";
         if(suggestedTags.includes(newTag)) {
           setSuggestedTags(prev => prev.filter(t => t !== newTag));
         }
-      } else if (currentTags.length >= 10) {
+      } else if (currentTagsValue.length >= 10) {
         toast({ title: "Tag Limit Reached", description: "You can add a maximum of 10 tags.", variant: "destructive" });
       }
     }
   };
 
   const handleRemoveTag = (tagToRemove: string) => {
-    const updatedTags = currentTags.filter(tag => tag !== tagToRemove);
-    setCurrentTags(updatedTags);
+    const currentTagsValue = form.getValues("tags");
+    const updatedTags = currentTagsValue.filter(tag => tag !== tagToRemove);
     form.setValue("tags", updatedTags, { shouldValidate: true });
   };
   
   const addSuggestedTag = (tag: string) => {
-    if (!currentTags.includes(tag) && currentTags.length < 10) {
-      const updatedTags = [...currentTags, tag];
-      setCurrentTags(updatedTags);
+    const currentTagsValue = form.getValues("tags");
+    if (!currentTagsValue.includes(tag) && currentTagsValue.length < 10) {
+      const updatedTags = [...currentTagsValue, tag];
       form.setValue("tags", updatedTags, { shouldValidate: true });
       setSuggestedTags(prev => prev.filter(t => t !== tag));
     }
@@ -151,16 +156,12 @@ export default function CreateListingForm() {
     }
     setIsSubmitting(true);
     try {
-      // The server action `createListing` needs to handle auth securely.
-      // For now, we assume it can derive user info or it's passed implicitly.
-      // A better approach would be for `createListing` to take `userId` or use Admin SDK.
-      // Let's modify `createListing` to expect a `userId` if called from client action wrapper
-      // OR assume it's handled if it's a pure server action used with `use server`.
-      // The current `createListing` uses a mock user, which is not suitable.
-      // This part needs to be fixed in `actions/listings.ts` to use actual `currentUser.uid`.
-      // For the purpose of this UI component, we proceed.
-      
-      const result = await createListing(values); // This needs adjustment in actions.ts
+      const userDetails = {
+        uid: currentUser.uid,
+        name: currentUser.displayName,
+        email: currentUser.email,
+      };
+      const result = await createListing(values, userDetails);
       toast({ title: "Listing Created!", description: "Your listing has been successfully published." });
       router.push(`/listings/${result.id}`);
     } catch (error: any) {
@@ -225,7 +226,7 @@ export default function CreateListingForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Category</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl><SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger></FormControl>
                       <SelectContent>
                         {ListingCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
@@ -240,14 +241,14 @@ export default function CreateListingForm() {
             <FormItem>
               <FormLabel>Images (up to {MAX_IMAGES}, max 5MB each)</FormLabel>
               <FormControl>
-                <Input type="file" accept="image/png, image/jpeg, image/gif" multiple onChange={handleImageUpload} className="hidden" id="imageUpload" />
+                <Input type="file" accept="image/png, image/jpeg, image/gif, image/webp" multiple onChange={handleImageUpload} className="hidden" id="imageUpload" />
               </FormControl>
               <label htmlFor="imageUpload" className="mt-1 flex items-center justify-center w-full h-32 px-4 transition bg-background border-2 border-border border-dashed rounded-md appearance-none cursor-pointer hover:border-primary focus:outline-none">
                   <span className="flex items-center space-x-2">
                       <UploadCloud className="w-6 h-6 text-muted-foreground" />
                       <span className="font-medium text-muted-foreground">
                       Click to upload images
-                      <p className="text-xs text-muted-foreground/80">PNG, JPG, GIF up to 5MB</p>
+                      <p className="text-xs text-muted-foreground/80">PNG, JPG, GIF, WEBP up to 5MB</p>
                       </span>
                   </span>
               </label>
@@ -258,7 +259,7 @@ export default function CreateListingForm() {
                   {imagePreviews.map((src, index) => (
                     <div key={index} className="relative aspect-square group border rounded-md overflow-hidden">
                       <Image src={src} alt={`Preview ${index + 1}`} layout="fill" objectFit="cover" />
-                      <Button type="button" variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => handleRemoveImage(index)}>
+                      <Button type="button" variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity z-10" onClick={() => handleRemoveImage(index)}>
                         <Trash2 size={14} />
                       </Button>
                     </div>
@@ -267,36 +268,47 @@ export default function CreateListingForm() {
               )}
             </FormItem>
 
-            <FormItem>
-              <FormLabel>Tags</FormLabel>
-              <div className="flex items-center gap-2">
-                <Input placeholder="Add a tag (e.g. handmade, vintage)" ref={tagInputRef} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddTag();}}} />
-                <Button type="button" variant="outline" onClick={handleAddTag}><PlusCircle size={16} className="mr-1" /> Add</Button>
-              </div>
-              <FormDescription>Press Enter or click Add. Max 10 tags, 30 chars each.</FormDescription>
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {currentTags.map(tag => (
-                  <Badge key={tag} variant="secondary" className="py-1 px-2 text-sm">
-                    {tag} <X size={14} className="ml-1.5 cursor-pointer hover:text-destructive" onClick={() => handleRemoveTag(tag)} />
-                  </Badge>
-                ))}
-              </div>
-              {form.formState.errors.tags && <FormMessage>{form.formState.errors.tags.message || form.formState.errors.tags.root?.message}</FormMessage>}
-              
-              {isTagging && <p className="text-sm text-muted-foreground mt-2 flex items-center"><Loader2 size={16} className="animate-spin mr-2" />Suggesting tags based on first image...</p>}
-              {suggestedTags.length > 0 && !isTagging && (
-                <div className="mt-3">
-                  <p className="text-sm font-medium mb-1">Suggested Tags (click to add):</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {suggestedTags.map(tag => (
-                      <Badge key={tag} variant="outline" className="cursor-pointer hover:bg-accent/20 py-1 px-2 text-sm" onClick={() => addSuggestedTag(tag)}>
-                        <Tag size={12} className="mr-1" /> {tag}
+            <FormField
+              control={form.control}
+              name="tags"
+              render={({ field }) => ( // field here represents the RHF field for tags array
+                <FormItem>
+                  <FormLabel>Tags</FormLabel>
+                  <div className="flex items-center gap-2">
+                    <Input 
+                      placeholder="Add a tag (e.g. handmade, vintage)" 
+                      ref={tagInputRef} 
+                      onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddTag();}}} 
+                    />
+                    <Button type="button" variant="outline" onClick={handleAddTag}><PlusCircle size={16} className="mr-1" /> Add</Button>
+                  </div>
+                  <FormDescription>Press Enter or click Add. Max 10 tags, 30 chars each.</FormDescription>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {field.value.map(tag => ( // Use field.value for displaying tags
+                      <Badge key={tag} variant="secondary" className="py-1 px-2 text-sm">
+                        {tag} <X size={14} className="ml-1.5 cursor-pointer hover:text-destructive" onClick={() => handleRemoveTag(tag)} />
                       </Badge>
                     ))}
                   </div>
-                </div>
+                  {form.formState.errors.tags && <FormMessage>{form.formState.errors.tags.message || form.formState.errors.tags.root?.message}</FormMessage>}
+                  
+                  {isTagging && <p className="text-sm text-muted-foreground mt-2 flex items-center"><Loader2 size={16} className="animate-spin mr-2" />Suggesting tags based on first image...</p>}
+                  {suggestedTags.length > 0 && !isTagging && (
+                    <div className="mt-3">
+                      <p className="text-sm font-medium mb-1">Suggested Tags (click to add):</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {suggestedTags.map(tag => (
+                          <Badge key={tag} variant="outline" className="cursor-pointer hover:bg-accent/20 py-1 px-2 text-sm" onClick={() => addSuggestedTag(tag)}>
+                            <Tag size={12} className="mr-1" /> {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </FormItem>
               )}
-            </FormItem>
+            />
+
 
             <div className="grid md:grid-cols-2 gap-6">
               <FormField
