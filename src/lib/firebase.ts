@@ -1,40 +1,31 @@
 
-import { initializeApp, getApps, getApp } from "firebase/app";
+import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
+import { getAnalytics, type Analytics } from "firebase/analytics";
 
-const PLACEHOLDER_API_KEY = "YOUR_API_KEY";
-
-const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
-const authDomain = process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN;
-const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-const storageBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET;
-const messagingSenderId = process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID;
-const appId = process.env.NEXT_PUBLIC_FIREBASE_APP_ID;
-
-if (!apiKey || apiKey === PLACEHOLDER_API_KEY) {
-  console.error(
-    "Firebase API Key is not configured or is using a placeholder. " +
-    "Please ensure NEXT_PUBLIC_FIREBASE_API_KEY is set correctly in your environment variables. " +
-    "Using placeholder may lead to auth/api-key-not-valid errors."
-  );
-}
-
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: apiKey || PLACEHOLDER_API_KEY, // Fallback for initialization, error already logged
-  authDomain: authDomain || "YOUR_AUTH_DOMAIN",
-  projectId: projectId || "YOUR_PROJECT_ID",
-  storageBucket: storageBucket || "YOUR_STORAGE_BUCKET",
-  messagingSenderId: messagingSenderId || "YOUR_MESSAGING_SENDER_ID",
-  appId: appId || "YOUR_APP_ID",
+  apiKey: "AIzaSyCh2sxuzUsxnTEU3QgM2lRVBlKJI3k_DqM",
+  authDomain: "kashurprop-3b5c3.firebaseapp.com",
+  projectId: "kashurprop-3b5c3",
+  storageBucket: "kashurprop-3b5c3.appspot.com", // Standard format for storageBucket
+  messagingSenderId: "651796855318",
+  appId: "1:651796855318:web:8d43f4fe9dfe1dd42d5337",
+  measurementId: "G-MXYCKVR4KC"
 };
 
 // Initialize Firebase
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
+let analytics: Analytics | undefined;
 
-export { app, auth, db, storage };
+if (typeof window !== 'undefined') {
+  analytics = getAnalytics(app);
+}
 
+export { app, auth, db, storage, analytics };
