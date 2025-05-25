@@ -10,15 +10,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, MapPin, FilterX, Search, Frown } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"; // Added CardFooter here
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+
+const ALL_CATEGORIES_VALUE = "ALL_CATEGORIES";
 
 export default function ListingsGrid() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
   
-  const [categoryFilter, setCategoryFilter] = useState<string>("");
+  const [categoryFilter, setCategoryFilter] = useState<string>(""); // Empty string for placeholder
   const [cityFilter, setCityFilter] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState<string>("");
   const { toast } = useToast();
@@ -49,24 +51,26 @@ export default function ListingsGrid() {
   };
 
   useEffect(() => {
+    // Initial fetch without specific filters
     fetchAndSetListings();
   }, []);
 
   const handleFilter = () => {
     startTransition(() => {
+      const categoryToFetch = categoryFilter === ALL_CATEGORIES_VALUE || categoryFilter === "" ? undefined : categoryFilter;
       fetchAndSetListings({ 
-        category: categoryFilter || undefined, 
+        category: categoryToFetch, 
         city: cityFilter || undefined 
       });
     });
   };
 
   const handleResetFilters = () => {
-    setCategoryFilter("");
+    setCategoryFilter(""); // Reset to empty string to show placeholder
     setCityFilter("");
     setSearchTerm("");
     startTransition(() => {
-      fetchAndSetListings();
+      fetchAndSetListings(); // Fetch all listings
     });
   };
   
@@ -106,7 +110,7 @@ export default function ListingsGrid() {
                 <SelectValue placeholder="Select Category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Categories</SelectItem>
+                <SelectItem value={ALL_CATEGORIES_VALUE}>All Categories</SelectItem>
                 {ListingCategories.map(cat => (
                   <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                 ))}
