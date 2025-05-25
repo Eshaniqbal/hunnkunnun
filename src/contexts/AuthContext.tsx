@@ -45,7 +45,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Handled initial loading state via currentUser === undefined
   // to prevent flash of unauthenticated content or unnecessary full page skeleton
   // Children are rendered once auth state is determined (null or UserProfile)
-  // The main layout skeleton for initial page load is handled by Next.js server rendering and suspense if used.
+  // The main layout skeleton for initial page load is by Next.js server rendering and suspense if used.
 
   return (
     <AuthContext.Provider value={{ currentUser, loading }}>
@@ -62,7 +62,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     <path d="M4.93005 19.07L7.76005 16.24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     <path d="M16.24 7.76005L19.07 4.93005" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
-                <p className="text-lg font-medium text-foreground">Initializing E-Kaar...</p>
+                <p className="text-lg font-medium text-foreground">Initializing Hunnkunnun...</p>
                 <p className="text-sm text-muted-foreground">Please wait a moment.</p>
             </div>
         </div>

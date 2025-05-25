@@ -4,7 +4,7 @@ export default function Footer() {
     <footer className="bg-card border-t border-border py-6 text-center mt-auto">
       <div className="container mx-auto px-4">
         <p className="text-sm text-muted-foreground">
-          &copy; {new Date().getFullYear()} E-Kaar. All rights reserved.
+          &copy; {new Date().getFullYear()} Hunnkunnun. All rights reserved.
         </p>
         <p className="text-xs text-muted-foreground mt-1">
           Connecting communities across Jammu & Kashmir.
