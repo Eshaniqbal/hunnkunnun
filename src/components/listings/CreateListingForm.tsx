@@ -43,7 +43,7 @@ export default function CreateListingForm() {
     defaultValues: {
       title: "",
       description: "",
-      price: undefined, 
+      price: "" as unknown as number, // Initialize with empty string for controlled input
       category: undefined, 
       tags: [],
       locationAddress: "",
@@ -156,12 +156,18 @@ export default function CreateListingForm() {
     }
     setIsSubmitting(true);
     try {
+      // Ensure price is a number before sending to the backend
+      const submissionValues = {
+        ...values,
+        price: Number(values.price) // Coerce price, react-hook-form might send it as string for type="number"
+      };
+
       const userDetails = {
         uid: currentUser.uid,
         name: currentUser.displayName,
         email: currentUser.email,
       };
-      const result = await createListing(values, userDetails);
+      const result = await createListing(submissionValues, userDetails);
       toast({ title: "Listing Created!", description: "Your listing has been successfully published." });
       router.push(`/listings/${result.id}`);
     } catch (error: any) {
@@ -226,7 +232,7 @@ export default function CreateListingForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Category</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value} >
                       <FormControl><SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger></FormControl>
                       <SelectContent>
                         {ListingCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
@@ -345,3 +351,4 @@ export default function CreateListingForm() {
     </Card>
   );
 }
+
