@@ -19,7 +19,12 @@ export const CreateListingSchema = z.object({
     message: "Invalid category selected.",
   }),
   phoneNumber: z.string()
-    .regex(/^\d{10}$/, "Please enter a valid 10-digit phone number")
+    .transform((val) => val.replace(/[\s-]/g, '')) // Remove spaces and hyphens
+    .transform((val) => val.replace(/^\+91/, '')) // Remove +91 if present
+    .refine(
+      (val) => /^\d{10}$/.test(val),
+      "Please enter a valid 10-digit phone number"
+    )
     .transform(val => `+91${val}`),
   tags: z.array(z.string().min(1, "Tag cannot be empty").max(30, "Tag must be at most 30 characters"))
     .max(10, "Maximum 10 tags allowed."),

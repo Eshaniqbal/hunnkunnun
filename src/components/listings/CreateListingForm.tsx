@@ -32,7 +32,7 @@ import { uploadImages } from "@/lib/uploadImages";
 export default function CreateListingForm() {
   const router = useRouter();
   const { toast } = useToast();
-  const { currentUser } = useAuth(); 
+  const { currentUser, authLoading } = useAuth(); 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [isTagging, setIsTagging] = useState(false);
@@ -151,10 +151,24 @@ export default function CreateListingForm() {
 
   async function onSubmit(values: CreateListingInput) {
     if (!currentUser) {
-      toast({ title: "Authentication Error", description: "You must be logged in to create a listing.", variant: "destructive" });
-      router.push('/login');
+      toast({ 
+        title: "Authentication Required", 
+        description: "Please log in to create a listing. Redirecting to login page...", 
+        variant: "destructive" 
+      });
+      router.push('/login?redirect=/listings/new');
       return;
     }
+
+    if (authLoading) {
+      toast({ 
+        title: "Please Wait", 
+        description: "Verifying your authentication...", 
+        variant: "default" 
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       // Upload images to MongoDB GridFS
@@ -173,13 +187,32 @@ export default function CreateListingForm() {
       };
       
       const result = await createListing(submissionValues, userDetails, imageUrls);
-      toast({ title: "Listing Created!", description: "Your listing has been successfully published." });
+      toast({ 
+        title: "Listing Created!", 
+        description: "Your listing has been successfully published.",
+        variant: "success"
+      });
       router.push(`/listings/${result.id}`);
     } catch (error: any) {
-      console.error("Submission error:", error);
+      console.error("Submission error:", {
+        error: error.message,
+        stack: error.stack,
+        values: JSON.stringify(values)
+      });
+      
+      let errorMessage = error.message || "Failed to create listing. Please try again.";
+      
+      // Handle specific error cases
+      if (errorMessage.includes("phoneNumber")) {
+        errorMessage = "Please enter a valid 10-digit phone number without spaces or special characters.";
+      } else if (errorMessage.includes("auth")) {
+        errorMessage = "Your session has expired. Please log in again.";
+        router.push('/login?redirect=/listings/new');
+      }
+      
       toast({
         title: "Submission Failed",
-        description: error.message || "Failed to create listing. Please check your input and try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

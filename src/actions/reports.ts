@@ -6,11 +6,11 @@ import { auth } from "@/lib/firebase";
 export async function reportListing(
   listingId: string,
   reason: string,
-  description: string
+  description: string,
+  userEmail?: string | null
 ) {
   try {
-    const currentUser = auth.currentUser;
-    if (!currentUser) {
+    if (!userEmail) {
       throw new Error("You must be logged in to report a listing");
     }
 
@@ -19,7 +19,7 @@ export async function reportListing(
       listingId,
       reason,
       description,
-      reportedBy: currentUser.email,
+      reportedBy: userEmail,
       status: "pending", // pending, reviewed, resolved
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -42,9 +42,19 @@ export async function reportListing(
       });
     });
 
-    return { success: true };
-  } catch (error) {
-    console.error("Error reporting listing:", error);
-    throw error;
+    return { success: true, message: "Report submitted successfully" };
+  } catch (error: any) {
+    console.error("Error reporting listing:", {
+      error: error.message,
+      stack: error.stack,
+      listingId,
+      reason
+    });
+    
+    if (error.message.includes("logged in")) {
+      throw new Error("Please log in to report this listing");
+    }
+    
+    throw new Error(error.message || "Failed to submit report. Please try again.");
   }
 } 
