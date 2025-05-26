@@ -70,7 +70,7 @@ export default function ListingDetailPage({ params }: ListingDetailPageProps) {
   const timeAgo = formatDistanceToNow(new Date(listing.createdAt), { addSuffix: true });
 
   const handleWhatsAppClick = () => {
-    const whatsappUrl = `https://wa.me/${listing.phoneNumber}?text=Hi, I'm interested in your listing "${listing.title}" on Hunnkunnun.`;
+    const whatsappUrl = `https://wa.me/${listing.phoneNumber}?text=Hi, I'm interested in your listing "${listing.title}" on KashurMart.`;
     window.open(whatsappUrl, '_blank');
   };
 

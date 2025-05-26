@@ -225,7 +225,7 @@ export default function HomePage() {
       <section className="container mx-auto px-4 py-16">
         <div className="bg-card rounded-3xl p-12">
           <div className="text-center space-y-2 mb-12">
-            <h2 className="text-3xl font-bold text-foreground">Why Choose Hunnkunnun?</h2>
+            <h2 className="text-3xl font-bold text-foreground">Why Choose KashurMart?</h2>
             <p className="text-foreground/80 font-medium">Experience the best of local commerce</p>
           </div>
           <div className="grid md:grid-cols-3 gap-8">

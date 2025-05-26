@@ -16,12 +16,12 @@ export default function Footer() {
           <div className="col-span-2 sm:col-span-2 md:col-span-1 space-y-4">
             <div className="flex items-center space-x-2">
               <div className="relative w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">H</span>
+                <span className="text-primary-foreground font-bold text-sm">K</span>
                 <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-accent rounded-full flex items-center justify-center">
-                  <span className="text-accent-foreground text-[10px]">K</span>
+                  <span className="text-accent-foreground text-[10px]">M</span>
                 </div>
               </div>
-              <h3 className="font-bold text-lg text-foreground">Hunnkunnun</h3>
+              <h3 className="font-bold text-lg text-foreground">KashurMart</h3>
             </div>
             <p className="text-sm text-foreground/80">
               Kashmir's trusted marketplace for buying and selling pre-owned items. Connect with local sellers and find amazing deals.
@@ -33,7 +33,7 @@ export default function Footer() {
               </div>
               <div className="flex items-center space-x-2 text-sm text-foreground/80">
                 <Mail className="h-4 w-4 shrink-0" />
-                <a href="mailto:contact@hunnkunnun.com" className="hover:text-primary">contact@hunnkunnun.com</a>
+                <a href="mailto:contact@kashurmart.com" className="hover:text-primary">contact@kashurmart.com</a>
               </div>
               <div className="flex items-center space-x-2 text-sm text-foreground/80">
                 <Phone className="h-4 w-4 shrink-0" />
@@ -127,7 +127,7 @@ export default function Footer() {
         <div className="mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-border">
           <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0 text-center sm:text-left">
             <p className="text-sm text-foreground/80">
-              © {currentYear} Hunnkunnun. All rights reserved.
+              © {currentYear} KashurMart. All rights reserved.
             </p>
             <div className="flex flex-wrap justify-center sm:justify-end items-center gap-2 sm:gap-4 text-sm text-foreground/80">
               <span>Made with ❤️ in Kashmir</span>
