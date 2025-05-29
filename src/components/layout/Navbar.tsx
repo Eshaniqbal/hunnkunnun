@@ -39,15 +39,15 @@ export default function Navbar() {
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo and Brand */}
         <Link href="/" className="flex items-center space-x-3">
-          <div className="relative w-8 h-8 sm:w-10 sm:h-10 bg-primary rounded-full flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-sm sm:text-xl">K</span>
-            <div className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-accent rounded-full flex items-center justify-center">
-              <span className="text-accent-foreground text-[8px] sm:text-xs">M</span>
+          <div className="relative w-8 h-8 sm:w-10 sm:h-10 bg-foreground rounded-full flex items-center justify-center">
+            <span className="text-background font-bold text-sm sm:text-xl">H</span>
+            <div className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-primary rounded-full flex items-center justify-center">
+              <span className="text-primary-foreground text-[8px] sm:text-xs">K</span>
             </div>
           </div>
           <div className="flex flex-col">
-            <span className="font-bold text-base sm:text-xl text-foreground tracking-tight">KashurMart</span>
-            <span className="text-[10px] sm:text-xs text-foreground/80">Kashmir's Marketplace</span>
+            <span className="font-bold text-base sm:text-xl text-foreground tracking-tight">HyounKunun</span>
+            <span className="text-[10px] sm:text-xs text-muted-foreground">Kashmir's Marketplace</span>
           </div>
         </Link>
 

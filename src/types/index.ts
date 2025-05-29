@@ -34,15 +34,24 @@ export interface Listing {
 }
 
 export const ListingCategories = [
+  "MobilePhones",
   "Electronics",
   "Vehicles",
   "Property",
-  "Home & Garden",
-  "Fashion & Accessories",
-  "Books & Hobbies",
-  "Services",
+  "Furniture",
+  "Fashion",
+  "Books",
+  "Sports",
+  "Business",
   "Jobs",
-  "Other",
+  "Education",
+  "Pets",
+  "Agriculture",
+  "Antiques",
+  "Music",
+  "Equipment",
+  "Health",
+  "Toys"
 ] as const;
 
 export type ListingCategory = typeof ListingCategories[number];

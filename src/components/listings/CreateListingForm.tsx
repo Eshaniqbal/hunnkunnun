@@ -29,6 +29,28 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { uploadImages } from "@/lib/uploadImages";
 
+// Add this helper object for category display names
+const CategoryDisplayNames: Record<string, string> = {
+  MobilePhones: "Mobile Phones",
+  Electronics: "Electronics & Appliances",
+  Vehicles: "Cars & Vehicles",
+  Property: "Property",
+  Furniture: "Furniture",
+  Fashion: "Fashion",
+  Books: "Books",
+  Sports: "Sports",
+  Business: "Business",
+  Jobs: "Jobs",
+  Education: "Education",
+  Pets: "Pets",
+  Agriculture: "Agriculture",
+  Antiques: "Antiques",
+  Music: "Music",
+  Equipment: "Equipment",
+  Health: "Health",
+  Toys: "Toys"
+};
+
 export default function CreateListingForm() {
   const router = useRouter();
   const { toast } = useToast();
@@ -44,7 +66,7 @@ export default function CreateListingForm() {
       title: "",
       description: "",
       price: "",
-      category: "",
+      category: "MobilePhones",
       phoneNumber: "",
       tags: [],
       locationAddress: "",
@@ -169,16 +191,24 @@ export default function CreateListingForm() {
       return;
     }
 
+    // Add debug logging
+    console.log("Form values before submission:", values);
+    console.log("Category value:", values.category);
+    console.log("Valid categories:", ListingCategories);
+
     setIsSubmitting(true);
     try {
       // Upload images to MongoDB GridFS
       const imageUrls = await uploadImages(values.images);
 
-      // Ensure price is a number before sending to the backend
+      // Ensure price is a number and category is valid
       const submissionValues = {
         ...values,
-        price: Number(values.price)
+        price: Number(values.price),
+        category: values.category as typeof ListingCategories[number]
       };
+
+      console.log("Submission values:", submissionValues);
 
       const userDetails = {
         uid: currentUser.uid,
@@ -197,13 +227,16 @@ export default function CreateListingForm() {
       console.error("Submission error:", {
         error: error.message,
         stack: error.stack,
-        values: JSON.stringify(values)
+        values: JSON.stringify(values),
+        category: values.category
       });
       
       let errorMessage = error.message || "Failed to create listing. Please try again.";
       
       // Handle specific error cases
-      if (errorMessage.includes("phoneNumber")) {
+      if (errorMessage.includes("category")) {
+        errorMessage = `Invalid category: ${values.category}. Valid categories are: ${ListingCategories.join(", ")}`;
+      } else if (errorMessage.includes("phoneNumber")) {
         errorMessage = "Please enter a valid 10-digit phone number without spaces or special characters.";
       } else if (errorMessage.includes("auth")) {
         errorMessage = "Your session has expired. Please log in again.";
@@ -295,10 +328,26 @@ export default function CreateListingForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Category</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value} >
-                    <FormControl><SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger></FormControl>
+                  <Select 
+                    onValueChange={(value) => {
+                      console.log("Selected category:", value);
+                      field.onChange(value);
+                    }} 
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a category">
+                          {field.value ? CategoryDisplayNames[field.value] : "Select a category"}
+                        </SelectValue>
+                      </SelectTrigger>
+                    </FormControl>
                     <SelectContent>
-                      {ListingCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                      {ListingCategories.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {CategoryDisplayNames[category]}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />

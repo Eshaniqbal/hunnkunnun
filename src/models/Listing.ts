@@ -1,6 +1,11 @@
 import mongoose from 'mongoose';
 import { ListingCategories } from '@/types';
 
+// Delete the model if it exists to force schema refresh
+if (mongoose.models.Listing) {
+  delete mongoose.models.Listing;
+}
+
 const listingSchema = new mongoose.Schema({
   title: {
     type: String,
@@ -23,6 +28,12 @@ const listingSchema = new mongoose.Schema({
     type: String,
     required: true,
     enum: ListingCategories,
+    validate: {
+      validator: function(v: string) {
+        return ListingCategories.includes(v as any);
+      },
+      message: props => `${props.value} is not a valid category`
+    }
   },
   phoneNumber: {
     type: String,

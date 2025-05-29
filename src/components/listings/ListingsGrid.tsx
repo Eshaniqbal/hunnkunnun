@@ -108,7 +108,7 @@ export default function ListingsGrid() {
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select Category" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-[300px]">
                 <SelectItem value={ALL_CATEGORIES_VALUE}>All Categories</SelectItem>
                 {ListingCategories.map(cat => (
                   <SelectItem key={cat} value={cat}>{cat}</SelectItem>

@@ -15,8 +15,10 @@ export const CreateListingSchema = z.object({
   title: z.string().min(5, "Title must be at least 5 characters").max(100, "Title must be at most 100 characters"),
   description: z.string().min(20, "Description must be at least 20 characters").max(5000, "Description must be at most 5000 characters"),
   price: z.coerce.number().min(0, "Price must be a positive number"),
-  category: z.custom<ListingCategory>((val) => ListingCategories.includes(val as ListingCategory), {
-    message: "Invalid category selected.",
+  category: z.enum(ListingCategories as readonly string[], {
+    required_error: "Please select a category",
+    invalid_type_error: "Invalid category type",
+    description: "Category must be one of the predefined listing categories"
   }),
   phoneNumber: z.string()
     .transform((val) => val.replace(/[\s-]/g, '')) // Remove spaces and hyphens

@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { 
   Loader2, 
   Search, 
@@ -28,41 +28,82 @@ import {
   ArrowRight,
   Star,
   TrendingUp,
-  ShoppingBag
+  ShoppingBag,
+  Smartphone,
+  Tv,
+  Car,
+  Home,
+  Sofa,
+  Shirt,
+  Book,
+  Dumbbell,
+  Briefcase,
+  GraduationCap,
+  Dog,
+  Wheat,
+  Watch,
+  Music,
+  Building2,
+  Sparkles,
+  Baby
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 export default function HomePage() {
   const { currentUser } = useAuth();
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedCity, setSelectedCity] = useState<string>("all");
   const [cities, setCities] = useState<string[]>([]);
 
-  useEffect(() => {
-    async function fetchListings() {
-      try {
-        const fetchedListings = await getListings({
-          category: selectedCategory === "all" ? undefined : selectedCategory,
-          city: selectedCity === "all" ? undefined : selectedCity,
-        });
-        setListings(fetchedListings);
+  const fetchListings = async (pageNum: number, isLoadMore: boolean = false) => {
+    try {
+      const response = await getListings({
+        category: selectedCategory === "all" ? undefined : selectedCategory,
+        city: selectedCity === "all" ? undefined : selectedCity,
+        page: pageNum,
+        limit: 8,
+      });
 
-        // Extract unique cities
-        const uniqueCities = Array.from(
-          new Set(fetchedListings.map(listing => listing.location.city))
-        );
-        setCities(uniqueCities);
-      } catch (error) {
-        console.error("Error fetching listings:", error);
-      } finally {
-        setLoading(false);
+      if (isLoadMore) {
+        setListings(prev => [...prev, ...response.listings]);
+      } else {
+        setListings(response.listings);
       }
-    }
+      setHasMore(response.hasMore);
 
-    fetchListings();
+      // Extract unique cities
+      const uniqueCities = Array.from(
+        new Set(response.listings.map(listing => listing.location.city))
+      );
+      if (!isLoadMore) {
+        setCities(uniqueCities);
+      }
+    } catch (error) {
+      console.error("Error fetching listings:", error);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  useEffect(() => {
+    setPage(1);
+    setLoading(true);
+    fetchListings(1);
   }, [selectedCategory, selectedCity]);
+
+  const loadMore = async () => {
+    setLoadingMore(true);
+    const nextPage = page + 1;
+    await fetchListings(nextPage, true);
+    setPage(nextPage);
+  };
 
   const filteredListings = listings.filter(listing =>
     listing.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -161,7 +202,7 @@ export default function HomePage() {
       )}
 
       {/* Listings Grid Section */}
-      <section className="container mx-auto px-4">
+      <section id="listings" className="container mx-auto px-4">
         <div className="text-center space-y-2 mb-8">
           <h2 className="text-3xl font-bold text-foreground">Latest Listings</h2>
           <p className="text-foreground/80 font-medium">Browse through our most recent offerings</p>
@@ -176,48 +217,69 @@ export default function HomePage() {
             <p className="text-foreground/80">Try adjusting your search or filters</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
-            {filteredListings.map((listing) => (
-              <Link key={listing.id} href={`/listings/${listing.id}`} className="block h-full">
-                <Card className="group h-full overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col">
-                  <div className="relative w-full pt-[100%]">
-                    {listing.images[0] && (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+              {filteredListings.map((listing) => (
+                <Link key={listing.id} href={`/listings/${listing.id}`} className="block h-full">
+                  <Card className="group h-full overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col">
+                    <div className="aspect-square relative overflow-hidden">
                       <img
                         src={listing.images[0]}
                         alt={listing.title}
-                        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-105"
                       />
-                    )}
-                    <div className="absolute bottom-2 right-2 bg-foreground/90 backdrop-blur-sm text-background px-2 py-1 rounded-md text-xs sm:text-sm">
-                      ₹{listing.price}
-                    </div>
-                  </div>
-                  <div className="p-3 sm:p-4 flex flex-col flex-grow">
-                    <h3 className="font-semibold text-sm sm:text-base line-clamp-2 group-hover:text-primary transition-colors">
-                      {listing.title}
-                    </h3>
-                    <div className="mt-auto pt-2">
-                      <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-foreground/80">
-                        <MapPin className="h-3 w-3 sm:h-4 sm:w-4 shrink-0" />
-                        <span className="truncate">{listing.location.city}</span>
-                      </div>
-                      <div className="flex flex-wrap gap-1 sm:gap-2 mt-2">
-                        {listing.tags.slice(0, 2).map((tag) => (
-                          <div
-                            key={tag}
-                            className="flex items-center text-[10px] sm:text-xs bg-accent/50 text-foreground px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-md"
-                          >
-                            <Tag className="h-2 w-2 sm:h-3 sm:w-3 mr-1 shrink-0" />
-                            <span className="truncate">{tag}</span>
-                          </div>
-                        ))}
+                      <div className="absolute bottom-2 right-2">
+                        <Badge variant="secondary" className="bg-background/80 backdrop-blur-sm">
+                          ₹{listing.price.toLocaleString()}
+                        </Badge>
                       </div>
                     </div>
-                  </div>
-                </Card>
-              </Link>
-            ))}
-          </div>
+                    <CardContent className="flex-1 p-4">
+                      <div className="space-y-1">
+                        <h3 className="font-semibold text-foreground line-clamp-1">{listing.title}</h3>
+                        <p className="text-sm text-foreground/80 line-clamp-2">{listing.description}</p>
+                      </div>
+                      <div className="mt-4 flex items-center justify-between text-sm text-foreground/60">
+                        <div className="flex items-center">
+                          <MapPin className="h-4 w-4 mr-1" />
+                          <span>{listing.location.city}</span>
+                        </div>
+                        <div className="flex items-center">
+                          <Tag className="h-4 w-4 mr-1" />
+                          <span>{listing.category}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+            
+            {/* Load More Button */}
+            {hasMore && (
+              <div className="flex justify-center mt-8">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                  className="min-w-[200px]"
+                >
+                  {loadingMore ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    <>
+                      Load More
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </section>
 
@@ -225,7 +287,7 @@ export default function HomePage() {
       <section className="container mx-auto px-4 py-16">
         <div className="bg-card rounded-3xl p-12">
           <div className="text-center space-y-2 mb-12">
-            <h2 className="text-3xl font-bold text-foreground">Why Choose KashurMart?</h2>
+            <h2 className="text-3xl font-bold text-foreground">Why Choose HyounKunun?</h2>
             <p className="text-foreground/80 font-medium">Experience the best of local commerce</p>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
@@ -260,23 +322,196 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Categories Showcase */}
-      <section className="container mx-auto px-4">
-        <div className="text-center space-y-2 mb-12">
+      {/* Featured Categories with Popular Items */}
+      <section className="container mx-auto px-4 space-y-12">
+        <div className="text-center space-y-2">
           <h2 className="text-3xl font-bold text-foreground">Popular Categories</h2>
-          <p className="text-foreground/80 font-medium">Explore items by category</p>
+          <p className="text-foreground/80 font-medium">Discover amazing deals in your favorite categories</p>
+        </div>
+
+        {/* Mobile Phones & Electronics */}
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <div className="space-y-1">
+              <h3 className="text-2xl font-semibold text-foreground flex items-center gap-2">
+                <Smartphone className="h-6 w-6 text-primary" />
+                Mobile Phones & Electronics
+              </h3>
+              <p className="text-muted-foreground">Latest gadgets and electronics</p>
+            </div>
+            <Button variant="link" className="text-primary" onClick={() => setSelectedCategory("Mobile Phones")}>
+              View All <ArrowRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {listings.filter(listing => 
+              listing.category === "Mobile Phones" || listing.category === "Electronics & Appliances"
+            ).slice(0, 4).map((listing) => (
+              <Link key={listing.id} href={`/listings/${listing.id}`}>
+                <Card className="group h-full overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                  <div className="aspect-square relative overflow-hidden">
+                    <img
+                      src={listing.images[0] || "/placeholder.png"}
+                      alt={listing.title}
+                      className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute bottom-2 right-2 bg-black/75 text-white px-2 py-1 rounded text-sm">
+                      ₹{listing.price.toLocaleString()}
+                    </div>
+                  </div>
+                  <CardContent className="p-3">
+                    <h4 className="font-medium line-clamp-1">{listing.title}</h4>
+                    <p className="text-sm text-muted-foreground line-clamp-1">{listing.location.city}</p>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Vehicles */}
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <div className="space-y-1">
+              <h3 className="text-2xl font-semibold text-foreground flex items-center gap-2">
+                <Car className="h-6 w-6 text-primary" />
+                Cars & Vehicles
+              </h3>
+              <p className="text-muted-foreground">Find your perfect ride</p>
+            </div>
+            <Button variant="link" className="text-primary" onClick={() => setSelectedCategory("Cars & Vehicles")}>
+              View All <ArrowRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {listings.filter(listing => listing.category === "Cars & Vehicles")
+              .slice(0, 4).map((listing) => (
+              <Link key={listing.id} href={`/listings/${listing.id}`}>
+                <Card className="group h-full overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                  <div className="aspect-square relative overflow-hidden">
+                    <img
+                      src={listing.images[0] || "/placeholder.png"}
+                      alt={listing.title}
+                      className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute bottom-2 right-2 bg-black/75 text-white px-2 py-1 rounded text-sm">
+                      ₹{listing.price.toLocaleString()}
+                    </div>
+                  </div>
+                  <CardContent className="p-3">
+                    <h4 className="font-medium line-clamp-1">{listing.title}</h4>
+                    <p className="text-sm text-muted-foreground line-clamp-1">{listing.location.city}</p>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Property */}
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <div className="space-y-1">
+              <h3 className="text-2xl font-semibold text-foreground flex items-center gap-2">
+                <Home className="h-6 w-6 text-primary" />
+                Property
+              </h3>
+              <p className="text-muted-foreground">Homes and commercial spaces</p>
+            </div>
+            <Button variant="link" className="text-primary" onClick={() => setSelectedCategory("Property")}>
+              View All <ArrowRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {listings.filter(listing => listing.category === "Property")
+              .slice(0, 4).map((listing) => (
+              <Link key={listing.id} href={`/listings/${listing.id}`}>
+                <Card className="group h-full overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                  <div className="aspect-square relative overflow-hidden">
+                    <img
+                      src={listing.images[0] || "/placeholder.png"}
+                      alt={listing.title}
+                      className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute bottom-2 right-2 bg-black/75 text-white px-2 py-1 rounded text-sm">
+                      ₹{listing.price.toLocaleString()}
+                    </div>
+                  </div>
+                  <CardContent className="p-3">
+                    <h4 className="font-medium line-clamp-1">{listing.title}</h4>
+                    <p className="text-sm text-muted-foreground line-clamp-1">{listing.location.city}</p>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Quick Category Access */}
+        <div className="pt-8">
+          <div className="text-center space-y-2 mb-8">
+            <h3 className="text-2xl font-semibold text-foreground">More Categories</h3>
+            <p className="text-muted-foreground">Browse all our categories</p>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {[
+              { name: "Fashion", icon: <Shirt className="h-6 w-6" />, color: "bg-pink-500" },
+              { name: "Furniture", icon: <Sofa className="h-6 w-6" />, color: "bg-orange-500" },
+              { name: "Books", icon: <Book className="h-6 w-6" />, color: "bg-blue-500" },
+              { name: "Sports", icon: <Dumbbell className="h-6 w-6" />, color: "bg-green-500" },
+              { name: "Business", icon: <Briefcase className="h-6 w-6" />, color: "bg-purple-500" },
+              { name: "Education", icon: <GraduationCap className="h-6 w-6" />, color: "bg-yellow-500" }
+            ].map((category) => (
+              <Button
+                key={category.name}
+                variant="outline"
+                className="h-auto py-6 flex flex-col gap-3 hover:bg-primary/5 group relative overflow-hidden"
+                onClick={() => {
+                  setSelectedCategory(category.name);
+                  document.querySelector('#listings')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                <div className={`absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity ${category.color}`} />
+                {category.icon}
+                <span className="text-sm text-center relative z-10">{category.name}</span>
+              </Button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Trending Items Section */}
+      <section className="container mx-auto px-4 py-16">
+        <div className="text-center space-y-2 mb-8">
+          <h2 className="text-3xl font-bold text-foreground">Trending Now</h2>
+          <p className="text-foreground/80 font-medium">Most viewed items this week</p>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {ListingCategories.slice(0, 8).map((category) => (
-            <Button
-              key={category}
-              variant="outline"
-              className="h-auto py-8 flex flex-col gap-3 hover:bg-primary/5 border-primary/20"
-              onClick={() => setSelectedCategory(category)}
-            >
-              <ShoppingBag className="h-6 w-6" />
-              <span>{category}</span>
-            </Button>
+          {listings.slice(0, 4).map((listing) => (
+            <Link key={listing.id} href={`/listings/${listing.id}`}>
+              <Card className="group h-full overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                <div className="aspect-square relative overflow-hidden">
+                  <img
+                    src={listing.images[0] || "/placeholder.png"}
+                    alt={listing.title}
+                    className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <div className="absolute bottom-2 right-2 bg-black/75 text-white px-2 py-1 rounded text-sm">
+                    ₹{listing.price.toLocaleString()}
+                  </div>
+                  <div className="absolute top-2 left-2">
+                    <div className="bg-white/90 text-sm px-2 py-1 rounded-md flex items-center">
+                      <TrendingUp className="h-3 w-3 mr-1" />
+                      <span>Trending</span>
+                    </div>
+                  </div>
+                </div>
+                <CardContent className="p-3">
+                  <h4 className="font-medium line-clamp-1">{listing.title}</h4>
+                  <p className="text-sm text-muted-foreground line-clamp-1">{listing.location.city}</p>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
       </section>
@@ -286,7 +521,7 @@ export default function HomePage() {
         <div className="bg-card rounded-3xl p-12 text-center">
           <h2 className="text-3xl font-bold mb-4 text-foreground">Ready to Start?</h2>
           <p className="text-lg text-foreground/80 mb-8 max-w-2xl mx-auto font-medium">
-            Join thousands of users making great deals every day on Kashmir's fastest-growing marketplace.
+            Join thousands of users making great deals every day on your fastest-growing marketplace.
           </p>
           {!currentUser && (
             <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground">

@@ -94,11 +94,20 @@ export async function createListing(input: CreateListingInput, user: UserDetails
   }
 }
 
-export async function getListings(filters?: { category?: string; city?: string; userId?: string }): Promise<Listing[]> {
+export async function getListings(filters?: { 
+  category?: string; 
+  city?: string; 
+  userId?: string;
+  page?: number;
+  limit?: number;
+}): Promise<{ listings: Listing[]; hasMore: boolean }> {
   try {
     await connectDB();
     
     const query: any = {};
+    const page = filters?.page || 1;
+    const limit = filters?.limit || 8;
+    const skip = (page - 1) * limit;
     
     if (filters?.category) {
       query.category = filters.category;
@@ -110,14 +119,25 @@ export async function getListings(filters?: { category?: string; city?: string; 
       query.userId = filters.userId;
     }
     
-    const listings = await ListingModel.find(query)
-      .sort({ createdAt: -1 })
-      .lean();
+    const [listings, total] = await Promise.all([
+      ListingModel.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit + 1)
+        .lean(),
+      ListingModel.countDocuments(query)
+    ]);
     
-    return listings.map(listing => serializeDocument(listing));
+    const hasMore = listings.length > limit;
+    const paginatedListings = listings.slice(0, limit);
+
+    return {
+      listings: paginatedListings.map(listing => serializeDocument(listing)),
+      hasMore
+    };
   } catch (error) {
     console.error("Error fetching listings: ", error);
-    return [];
+    return { listings: [], hasMore: false };
   }
 }
 

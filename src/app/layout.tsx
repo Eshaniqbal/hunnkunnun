@@ -10,8 +10,8 @@ const geistSans = GeistSans;
 const geistMono = GeistMono;
 
 export const metadata: Metadata = {
-  title: "KashurMart",
-  description: "Your local marketplace for Kashmir - Buy, Sell, and Connect.",
+  title: "HyounKunun",
+  description: "Your local marketplace - Buy, Sell, and Connect.",
 };
 
 export default function RootLayout({

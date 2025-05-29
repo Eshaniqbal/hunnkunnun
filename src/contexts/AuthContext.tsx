@@ -61,7 +61,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     <path d="M4.93005 19.07L7.76005 16.24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     <path d="M16.24 7.76005L19.07 4.93005" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
-                <p className="text-lg font-medium text-foreground">Initializing KashurMart...</p>
+                <p className="text-lg font-medium text-foreground">Initializing HyounKunun...</p>
                 <p className="text-sm text-muted-foreground">Please wait a moment.</p>
             </div>
         </div>
