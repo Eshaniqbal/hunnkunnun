@@ -12,26 +12,18 @@ export const dataURLMimeType = (dataURL: string) => {
 };
 
 export const CreateListingSchema = z.object({
-  title: z.string().min(5, "Title must be at least 5 characters").max(100, "Title must be at most 100 characters"),
-  description: z.string().min(20, "Description must be at least 20 characters").max(5000, "Description must be at most 5000 characters"),
-  price: z.coerce.number().min(0, "Price must be a positive number"),
+  title: z.string().min(5, "Title must be at least 5 characters").max(100, "Title must be less than 100 characters"),
+  description: z.string().min(20, "Description must be at least 20 characters").max(5000, "Description must be less than 5000 characters"),
+  price: z.string().or(z.number()).transform(val => Number(val)),
   category: z.enum(ListingCategories as readonly string[], {
     required_error: "Please select a category",
     invalid_type_error: "Invalid category type",
     description: "Category must be one of the predefined listing categories"
   }),
-  phoneNumber: z.string()
-    .transform((val) => val.replace(/[\s-]/g, '')) // Remove spaces and hyphens
-    .transform((val) => val.replace(/^\+91/, '')) // Remove +91 if present
-    .refine(
-      (val) => /^\d{10}$/.test(val),
-      "Please enter a valid 10-digit phone number"
-    )
-    .transform(val => `+91${val}`),
-  tags: z.array(z.string().min(1, "Tag cannot be empty").max(30, "Tag must be at most 30 characters"))
-    .max(10, "Maximum 10 tags allowed."),
-  locationAddress: z.string().min(5, "Address must be at least 5 characters").max(200, "Address must be at most 200 characters"),
-  locationCity: z.string().min(2, "City must be at least 2 characters").max(50, "City must be at most 50 characters"),
+  phoneNumber: z.string().regex(/^\+?[1-9]\d{9,11}$/, "Please enter a valid phone number"),
+  tags: z.array(z.string()).max(10, "Maximum 10 tags allowed"),
+  locationAddress: z.string().min(5, "Address must be at least 5 characters").max(200, "Address must be less than 200 characters"),
+  locationCity: z.string().min(2, "City must be at least 2 characters").max(50, "City must be less than 50 characters"),
   images: z.array(
     z.string()
       .refine((dataUri) => dataUri.startsWith("data:image/"), "Invalid image format (must be data URI starting with 'data:image/').")
@@ -44,6 +36,8 @@ export const CreateListingSchema = z.object({
         return byteLength > 0 && byteLength <= MAX_IMAGE_SIZE_BYTES;
       }, `Image size must be less than ${MAX_IMAGE_SIZE_MB}MB and not empty.`)
   ).min(1, "At least one image is required").max(MAX_IMAGES, `Maximum ${MAX_IMAGES} images allowed.`),
+  isPaid: z.boolean().optional().default(false),
+  paymentId: z.string().optional(),
 });
 
 export type CreateListingInput = z.infer<typeof CreateListingSchema>;

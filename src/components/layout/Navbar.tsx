@@ -18,6 +18,10 @@ export default function Navbar() {
   const { toast } = useToast();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  const handleLinkClick = () => {
+    setIsMenuOpen(false);
+  };
+
   const handleSignOut = async () => {
     try {
       await signOut(auth);
@@ -111,7 +115,7 @@ export default function Navbar() {
       )}>
         <div className="container mx-auto px-4 py-4 flex flex-col space-y-2">
           <Button variant="ghost" className="justify-start" asChild>
-            <Link href="/" className="flex items-center space-x-2">
+            <Link href="/" className="flex items-center space-x-2" onClick={handleLinkClick}>
               <Home className="h-5 w-5" />
               <span>Home</span>
             </Link>
@@ -119,31 +123,38 @@ export default function Navbar() {
           {currentUser ? (
             <>
               <Button variant="ghost" className="justify-start" asChild>
-                <Link href="/listings/new" className="flex items-center space-x-2">
+                <Link href="/listings/new" className="flex items-center space-x-2" onClick={handleLinkClick}>
                   <PlusCircle className="h-5 w-5" />
                   <span>Create Listing</span>
                 </Link>
               </Button>
               <Button variant="ghost" className="justify-start" asChild>
-                <Link href="/profile/listings" className="flex items-center space-x-2">
+                <Link href="/profile/listings" className="flex items-center space-x-2" onClick={handleLinkClick}>
                   <ListFilter className="h-5 w-5" />
                   <span>My Listings</span>
                 </Link>
               </Button>
               <Button variant="ghost" className="justify-start" asChild>
-                <Link href="/profile" className="flex items-center space-x-2">
+                <Link href="/profile" className="flex items-center space-x-2" onClick={handleLinkClick}>
                   <User className="h-5 w-5" />
                   <span>Profile</span>
                 </Link>
               </Button>
-              <Button variant="ghost" className="justify-start" onClick={handleSignOut}>
+              <Button 
+                variant="ghost" 
+                className="justify-start" 
+                onClick={() => {
+                  handleLinkClick();
+                  handleSignOut();
+                }}
+              >
                 <LogOut className="h-5 w-5" />
                 <span className="ml-2">Sign Out</span>
               </Button>
             </>
           ) : (
             <Button variant="ghost" className="justify-start" asChild>
-              <Link href="/login" className="flex items-center space-x-2">
+              <Link href="/login" className="flex items-center space-x-2" onClick={handleLinkClick}>
                 <LogIn className="h-5 w-5" />
                 <span>Login</span>
               </Link>

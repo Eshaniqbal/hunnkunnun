@@ -16,18 +16,21 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { createListing } from "@/actions/listings";
+import { createListing, getUserListingStats } from "@/actions/listings";
 import { CreateListingSchema, type CreateListingInput, MAX_IMAGES } from "@/lib/schemas";
 import { ListingCategories } from "@/types";
 import { smartTagging } from "@/ai/flows/smart-tagging";
-import { useState, useRef, ChangeEvent } from "react";
+import { useState, useRef, ChangeEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
-import { Loader2, PlusCircle, Tag, Trash2, UploadCloud, X } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertCircle, Loader2, PlusCircle, Tag, Trash2, UploadCloud, X } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { uploadImages } from "@/lib/uploadImages";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { UPIPayment } from "@/components/payments/UPIPayment";
+import { PaymentInfoCard } from "@/components/payments/PaymentInfoCard";
 
 // Add this helper object for category display names
 const CategoryDisplayNames: Record<string, string> = {
@@ -58,8 +61,37 @@ export default function CreateListingForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [isTagging, setIsTagging] = useState(false);
+  const [userStats, setUserStats] = useState<{
+    freeListingsCount: number;
+    paidListingsCount: number;
+    freeListingsRemaining: number;
+    totalPaidAmount: number;
+    lastPaymentDate: Date | null;
+  } | null>(null);
+  const [isPaid, setIsPaid] = useState(false);
   const tagInputRef = useRef<HTMLInputElement>(null);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [paymentId, setPaymentId] = useState<string | null>(null);
   
+  useEffect(() => {
+    async function fetchUserStats() {
+      if (currentUser) {
+        try {
+          const stats = await getUserListingStats(currentUser.uid);
+          setUserStats(stats);
+        } catch (error) {
+          console.error("Error fetching user stats:", error);
+          toast({
+            title: "Error",
+            description: "Could not fetch your listing statistics.",
+            variant: "destructive",
+          });
+        }
+      }
+    }
+    fetchUserStats();
+  }, [currentUser, toast]);
+
   const form = useForm<CreateListingInput>({
     resolver: zodResolver(CreateListingSchema),
     defaultValues: {
@@ -72,6 +104,7 @@ export default function CreateListingForm() {
       locationAddress: "",
       locationCity: "",
       images: [],
+      isPaid: false,
     },
   });
   
@@ -171,6 +204,16 @@ export default function CreateListingForm() {
     }
   };
 
+  const handlePaymentComplete = (transactionId: string) => {
+    setPaymentId(transactionId);
+    setIsPaid(true);
+    setShowPaymentDialog(false);
+    toast({
+      title: "Payment Successful",
+      description: "You can now publish your listing.",
+    });
+  };
+
   async function onSubmit(values: CreateListingInput) {
     if (!currentUser) {
       toast({ 
@@ -191,61 +234,49 @@ export default function CreateListingForm() {
       return;
     }
 
-    // Add debug logging
-    console.log("Form values before submission:", values);
-    console.log("Category value:", values.category);
-    console.log("Valid categories:", ListingCategories);
+    // Check if user needs to pay
+    if (!isPaid && userStats && userStats.freeListingsRemaining <= 0) {
+      toast({
+        title: "Payment Required",
+        description: "You have used all your free listings. Please pay ₹5 to create this listing.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsSubmitting(true);
     try {
-      // Upload images to MongoDB GridFS
+      // Upload images first
       const imageUrls = await uploadImages(values.images);
 
-      // Ensure price is a number and category is valid
-      const submissionValues = {
-        ...values,
-        price: Number(values.price),
-        category: values.category as typeof ListingCategories[number]
-      };
+      // Create the listing
+      const listing = await createListing(
+        { ...values, isPaid, paymentId },
+        {
+          uid: currentUser.uid,
+          name: currentUser.displayName,
+          email: currentUser.email
+        },
+        imageUrls
+      );
 
-      console.log("Submission values:", submissionValues);
-
-      const userDetails = {
-        uid: currentUser.uid,
-        name: currentUser.displayName,
-        email: currentUser.email,
-      };
-      
-      const result = await createListing(submissionValues, userDetails, imageUrls);
-      toast({ 
-        title: "Listing Created!", 
-        description: "Your listing has been successfully published.",
-        variant: "success"
-      });
-      router.push(`/listings/${result.id}`);
-    } catch (error: any) {
-      console.error("Submission error:", {
-        error: error.message,
-        stack: error.stack,
-        values: JSON.stringify(values),
-        category: values.category
-      });
-      
-      let errorMessage = error.message || "Failed to create listing. Please try again.";
-      
-      // Handle specific error cases
-      if (errorMessage.includes("category")) {
-        errorMessage = `Invalid category: ${values.category}. Valid categories are: ${ListingCategories.join(", ")}`;
-      } else if (errorMessage.includes("phoneNumber")) {
-        errorMessage = "Please enter a valid 10-digit phone number without spaces or special characters.";
-      } else if (errorMessage.includes("auth")) {
-        errorMessage = "Your session has expired. Please log in again.";
-        router.push('/login?redirect=/listings/new');
-      }
-      
       toast({
-        title: "Submission Failed",
-        description: errorMessage,
+        title: "Success!",
+        description: "Your listing has been created.",
+      });
+
+      // Refresh user stats
+      if (currentUser) {
+        const updatedStats = await getUserListingStats(currentUser.uid);
+        setUserStats(updatedStats);
+      }
+
+      router.push(`/listings/${listing.id}`);
+    } catch (error: any) {
+      console.error("Error creating listing:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create listing. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -261,6 +292,24 @@ export default function CreateListingForm() {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            {userStats && (
+              <PaymentInfoCard
+                freeListingsUsed={userStats.freeListingsCount}
+                freeListingsTotal={2}
+                paidListingsCount={userStats.paidListingsCount}
+                isPaid={isPaid}
+                onPaymentComplete={handlePaymentComplete}
+              />
+            )}
+
+            {/* UPI Payment Dialog */}
+            <UPIPayment
+              open={showPaymentDialog}
+              onClose={() => setShowPaymentDialog(false)}
+              onPaymentComplete={handlePaymentComplete}
+              amount={5}
+            />
+
             <FormField
               control={form.control}
               name="title"
@@ -452,9 +501,21 @@ export default function CreateListingForm() {
               />
             </div>
             
-            <Button type="submit" className="w-full text-lg py-3" size="lg" disabled={isSubmitting || isTagging}>
+            <Button 
+              type="submit" 
+              className="w-full text-lg py-3" 
+              size="lg" 
+              disabled={
+                isSubmitting || 
+                isTagging || 
+                (!isPaid && userStats && userStats.freeListingsRemaining <= 0)
+              }
+            >
               {(isSubmitting || isTagging) && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
-              {isSubmitting ? 'Publishing...' : isTagging ? 'Processing Image...' : 'Publish Listing'}
+              {isSubmitting ? 'Publishing...' : 
+               isTagging ? 'Processing Image...' : 
+               (!isPaid && userStats && userStats.freeListingsRemaining <= 0) ? 'Payment Required' :
+               'Publish Listing'}
             </Button>
           </form>
         </Form>

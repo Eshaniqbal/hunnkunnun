@@ -9,6 +9,7 @@ import ListingModel from "@/models/Listing";
 import { initializeApp } from "firebase/app";
 import { getStorage, ref, deleteObject } from "firebase/storage";
 import { Types } from 'mongoose';
+import UserStats from "@/models/UserStats";
 
 // Initialize Firebase
 const firebaseConfig = {
@@ -29,6 +30,10 @@ interface UserDetails {
   name: string | null;
   email: string | null;
 }
+
+// Constants
+const FREE_LISTINGS_LIMIT = 2;
+const PAID_LISTING_PRICE = 5;
 
 // Helper function to serialize MongoDB document
 function serializeDocument(doc: any): any {
@@ -61,6 +66,27 @@ export async function createListing(input: CreateListingInput, user: UserDetails
     // Connect to MongoDB
     await connectDB();
 
+    // Get or create user stats
+    let userStats = await UserStats.findOne({ userId: user.uid });
+    if (!userStats) {
+      userStats = await UserStats.create({
+        userId: user.uid,
+        freeListingsCount: 0,
+        paidListingsCount: 0,
+      });
+    }
+
+    // Check if user has reached free listings limit
+    const isPaid = input.isPaid || false;
+    if (!isPaid && userStats.freeListingsCount >= FREE_LISTINGS_LIMIT) {
+      throw new Error(`You have reached your limit of ${FREE_LISTINGS_LIMIT} free listings. Please pay ₹${PAID_LISTING_PRICE} to create more listings.`);
+    }
+
+    // Verify payment for paid listings
+    if (isPaid && !input.paymentId) {
+      throw new Error("Payment verification failed. Please try again.");
+    }
+
     // Create listing in MongoDB
     const listingData = {
       title,
@@ -73,6 +99,8 @@ export async function createListing(input: CreateListingInput, user: UserDetails
       userId: user.uid,
       userName: user.name || "Anonymous User",
       userEmail: user.email || "No Email Provided",
+      isPaid,
+      paymentId: input.paymentId,
       location: {
         address: locationAddress,
         city: locationCity,
@@ -81,6 +109,17 @@ export async function createListing(input: CreateListingInput, user: UserDetails
     };
 
     const listing = await ListingModel.create(listingData);
+
+    // Update user stats
+    if (isPaid) {
+      userStats.paidListingsCount += 1;
+      userStats.totalPaidAmount = (userStats.totalPaidAmount || 0) + PAID_LISTING_PRICE;
+      userStats.lastPaymentDate = new Date();
+    } else {
+      userStats.freeListingsCount += 1;
+    }
+    await userStats.save();
+
     const serializedListing = serializeDocument(listing);
     
     revalidatePath("/");
@@ -205,6 +244,34 @@ export async function deleteListing(listingId: string) {
     return { success: true };
   } catch (error) {
     console.error("Error deleting listing:", error);
+    throw error;
+  }
+}
+
+export async function getUserListingStats(userId: string) {
+  "use server";
+  
+  try {
+    await connectDB();
+    
+    let userStats = await UserStats.findOne({ userId });
+    if (!userStats) {
+      userStats = await UserStats.create({
+        userId,
+        freeListingsCount: 0,
+        paidListingsCount: 0,
+      });
+    }
+
+    return {
+      freeListingsCount: userStats.freeListingsCount,
+      paidListingsCount: userStats.paidListingsCount,
+      freeListingsRemaining: Math.max(0, FREE_LISTINGS_LIMIT - userStats.freeListingsCount),
+      totalPaidAmount: userStats.totalPaidAmount,
+      lastPaymentDate: userStats.lastPaymentDate,
+    };
+  } catch (error) {
+    console.error("Error fetching user listing stats:", error);
     throw error;
   }
 }

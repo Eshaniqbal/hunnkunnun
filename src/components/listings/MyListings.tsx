@@ -35,8 +35,8 @@ export default function MyListings() {
       if (!currentUser?.uid) return;
       
       try {
-        const fetchedListings = await getListings({ userId: currentUser.uid });
-        setListings(fetchedListings);
+        const response = await getListings({ userId: currentUser.uid });
+        setListings(response.listings || []); // Ensure we handle the listings array from the response
       } catch (error) {
         console.error("Error fetching listings:", error);
         toast({
@@ -84,7 +84,7 @@ export default function MyListings() {
     );
   }
 
-  if (listings.length === 0) {
+  if (!listings || listings.length === 0) {
     return (
       <div className="text-center py-16">
         <h2 className="text-2xl font-bold mb-2">No Listings Found</h2>
@@ -142,7 +142,7 @@ export default function MyListings() {
                 </div>
                 <p className="text-xs text-muted-foreground">{timeAgo}</p>
               </CardContent>
-              <CardFooter className="p-4 pt-0 flex justify-end">
+              <CardFooter className="p-4 pt-0 border-t">
                 <Button 
                   variant="destructive" 
                   size="sm"

@@ -61,6 +61,14 @@ const listingSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  isPaid: {
+    type: Boolean,
+    default: false,
+  },
+  paymentId: {
+    type: String,
+    required: false,
+  },
   location: {
     address: {
       type: String,
@@ -93,6 +101,7 @@ listingSchema.index({ category: 1 });
 listingSchema.index({ 'location.city': 1 });
 listingSchema.index({ userId: 1 });
 listingSchema.index({ createdAt: -1 });
+listingSchema.index({ isPaid: 1 });
 
 // Create text index for search functionality
 listingSchema.index({
